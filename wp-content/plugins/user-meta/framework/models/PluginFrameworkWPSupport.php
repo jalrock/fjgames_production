@@ -228,11 +228,18 @@ class PluginFrameworkWPSupport {
                         
         // Update metadata   
         if( $metadata ){
+            // print_r($metadata);
+            // exit;
             foreach ($metadata as $key => $value) {
-                if( $userID )
+                if ($key == 'user_lat_lon') {
+                        $value = $this->get_lat_lon($metadata);
+                }
+
+                if( $userID ) {
                     update_user_meta( $user_id, $key, $value );
-                else
+                } else {
                     add_user_meta( $user_id, $key, $value );
+                }
             }                            
         }  
 
@@ -240,6 +247,17 @@ class PluginFrameworkWPSupport {
         return array_merge( $userdata, $metadata );                            
     }
     
+    function get_lat_lon($user) {
+
+        $address = $user['user_address'].' '.$user['user_city'].' '.$user['user_state'].' '.$user['user_zip'];
+        $prepAddr = str_replace(' ','+',$address);
+        $geocode=file_get_contents('http://maps.google.com/maps/api/geocode/json?address='.$prepAddr.'&sensor=false');
+        $output= json_decode($geocode);
+        $latitude = $output->results[0]->geometry->location->lat;
+        $longitude = $output->results[0]->geometry->location->lng;
+        $value = $latitude.', '.$longitude;
+        return $value;
+    }
           
     /**
      * Non-ajax file upload

@@ -13,7 +13,23 @@
  */
 
 get_header(); ?>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+<?php global $current_user;
+	$users = get_users();
+	echo '<script>';
+	echo 'var citymap = {};'. "\n";
+	foreach ($users as $user) {
+		$meta = get_user_meta( $user->ID );
+		echo 'citymap[\''.strtolower($meta['user_city'][0]).'\'] = {
+  				center: new google.maps.LatLng('.$meta['user_lat_lon'][0].')
+			};'. "\n";
+		// echo "<pre>";
+		// print_r($meta);
+		// echo "</pre>";
+	}
+	echo '</script>';
 
+?>
 	<div id="primary" class="site-content">
 		<div id="content" role="main">
 <style>
@@ -22,7 +38,7 @@ get_header(); ?>
 
 		     }
     </style>
-    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+    
     <script type="text/javascript">
 
 var cityCircle;
@@ -39,18 +55,24 @@ function initialize() {
   // Construct the circle for each value in citymap.
   // Note: We scale the population by a factor of 20.
 
-    var populationOptions = {
-      strokeColor: '#FF0000',
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: '#FF0000',
-      fillOpacity: 0.35,
-      map: map,
-      center: new google.maps.LatLng(38.5111, -96.8005),
-      radius: 30000
-    };
-    // Add the circle for this city to the map.
-    cityCircle = new google.maps.Circle(populationOptions);
+    for (var city in citymap) {
+    	
+	    var populationOptions = {
+	      strokeColor: '#FF0000',
+	      strokeOpacity: 0.8,
+	      strokeWeight: 2,
+	      fillColor: '#FF0000',
+	      fillOpacity: 0.35,
+	      map: map,
+	      center: citymap[city].center,
+	      radius: 60000
+	    };
+
+	    console.log(populationOptions)
+	    // Add the circle for this city to the map.
+	    cityCircle = new google.maps.Circle(populationOptions);
+	}
+	
 }
 google.maps.event.addDomListener(window, 'load', initialize);
 </script>
