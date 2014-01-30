@@ -63,6 +63,9 @@ function twentytwelve_setup() {
 	// This theme uses wp_nav_menu() in one location.
 	register_nav_menu( 'primary', __( 'Primary Menu', 'twentytwelve' ) );
 
+	// Add User Menu
+	register_nav_menu('user-menu',__( 'User Menu' ));
+
 	/*
 	 * This theme supports custom background color and image,
 	 * and here we also set up the default background color.
@@ -76,6 +79,93 @@ function twentytwelve_setup() {
 	set_post_thumbnail_size( 624, 9999 ); // Unlimited height, soft crop
 }
 add_action( 'after_setup_theme', 'twentytwelve_setup' );
+
+
+/**
+ * Add custom post type inventory.
+ */
+function inventory_register() {
+ 
+	$labels = array(
+		'name' => _x('Inventory', 'post type general name'),
+		'singular_name' => _x('Inventory Item', 'post type singular name'),
+		'add_new' => _x('Add New', 'inventory item'),
+		'add_new_item' => __('Add New Inventory Item'),
+		'edit_item' => __('Edit Inventory Item'),
+		'new_item' => __('New Inventory Item'),
+		'view_item' => __('View Inventory Item'),
+		'search_items' => __('Search Inventory'),
+		'not_found' =>  __('Nothing found'),
+		'not_found_in_trash' => __('Nothing found in Trash'),
+		'parent_item_colon' => ''
+	);
+ 
+	$args = array(
+		'labels' => $labels,
+		'public' => true,
+		'publicly_queryable' => true,
+		'show_ui' => true,
+		'query_var' => true,
+		'rewrite' => array('slug' => 'store', 'with_front' => false),
+		'capability_type' => 'post',
+		'hierarchical' => false,
+		'menu_position' => 5,
+		'has_archive' => true,
+		'exclude_from_search' => true,
+		'taxonomies' => array('category'),
+		'supports' => array('title','thumbnail')
+	  ); 
+ 
+	register_post_type( 'inventory' , $args );
+	register_taxonomy_for_object_type( 'category', 'inventory' );
+}
+add_action('init', 'inventory_register');
+
+// add custom meta boxes by content type
+function ss_add_meta_boxes( $post_type ) {
+	add_meta_box('item_weight', 'Weight (oz)', 'weight_meta_box', 'inventory', 'normal', 'high');
+	add_meta_box('item_desc', 'Description', 'desc_meta_box', 'inventory', 'normal', 'high');
+}
+add_action('add_meta_boxes', 'ss_add_meta_boxes');
+
+/**
+ * Outputs Item Weight meta box
+ */
+function weight_meta_box( $post ) {
+	$item_weight = (array)get_post_meta($post->ID, 'item_weight', true);
+?>
+<p><label for="item_weight">Item Weight:</label>
+<input name="item_weight" id="item_weight" type="text" class="code" value="<?php echo $item_weight[0]; ?>" style="width:99%;">
+<?php
+}
+
+/**
+ * Outputs Item Description meta box
+ */
+function desc_meta_box( $post ) {
+	$item_desc = (array)get_post_meta($post->ID, 'item_desc', true);
+?>
+<p><label for="item_desc">Item Description:</label>
+<textarea name="item_desc" id="item_desc" cols="60" rows="4" tabindex="30" style="width: 97%;"><?php echo $item_desc[0]; ?></textarea>
+<?php
+}
+
+/**
+ * Saves post meta
+ */
+function ss_save_post($post_id) {
+	if (isset($_POST['item_weight'])) {
+		$item_weight = array_map('trim', (array)$_POST['item_weight']);
+		update_post_meta($post_id, 'item_weight', $item_weight);
+	}
+	if (isset($_POST['item_desc'])) {
+		$item_desc = array_map('trim', (array)$_POST['item_desc']);
+		update_post_meta($post_id, 'item_desc', $item_desc);
+	}
+
+}
+add_action('save_post', 'ss_save_post');
+
 
 /**
  * Add support for a custom header image.
